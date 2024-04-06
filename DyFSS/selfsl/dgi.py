@@ -141,7 +141,6 @@ class DGISample(nn.Module):
         idx = np.random.permutation(nb_nodes)
         shuf_fts = features[idx, :]
 
-        # 这里添加了一层gcn2
         embeddings = self.gcn2_forward(encoder_features, adj_norm)
 
         logits = self.forward2(features, shuf_fts, adj, None, None, None, None, embeddings)
