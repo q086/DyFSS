@@ -81,9 +81,9 @@ def main():
     selected_idx_z, pred_labels_z = generate_pseudo_labels_percentile(z_embeddings, cluster_center_z,
                                                                       data, cluster_num, args.st_per_p)
 
-    params = list(model.gate.parameters())  # gate
+    params = list(model.gate.parameters())
     # params = []
-    for ix, agent in enumerate(model.ssl_agent):  # five ssl_agent
+    for ix, agent in enumerate(model.ssl_agent):
         if agent.disc2 is not None:
             params = params + list(agent.disc2.parameters())
         if hasattr(agent, 'gcn2'):
@@ -161,94 +161,18 @@ def init():
     print("-----------------------------------------------------------------")
 
 
-# def generate_centers(cluster_centers, emb_unconf, y_pred):
-#     nn = NearestNeighbors(n_neighbors=1, algorithm='ball_tree').fit(emb_unconf.cpu().detach().numpy())
-#     # nn.kneighbors(): 得到上述emb_unconf中分别距离cluster_centers最近的点，这里体现为indices, 是上述点的index
-#     _, indices = nn.kneighbors(cluster_centers.detach().numpy())
-#     return indices[y_pred]  # 再用y_pred一套，那么就得到y_pred 的标签0-k,变成了对应的index
-
-#
-# def similarity_inds(z, upper_threshold):
-#     f_adj = np.matmul(z, np.transpose(z))
-#     cosine = f_adj
-#     cosine = cosine.reshape([-1, ])  # len(consine表示所有节点的个数，n_nodes)
-#     pos_num = round(upper_threshold * len(cosine))  # positive samples 样本个数，随着训练过程，逐渐变小
-#     neg_num = pos_num
-#
-#     pos_inds = np.argpartition(-cosine, pos_num)[:pos_num]  # 默认是从小到大排序
-#     neg_inds = np.argpartition(cosine, neg_num)[:neg_num]
-#     print("pos_inds_length:", len(pos_inds))
-#     print("neg_inds_length:", len(neg_inds))
-#
-#     return np.array(pos_inds), np.array(neg_inds)
-
-#
-# def get_sim_label(adj, pseudo_labels_z, emb, unconf_indices, cluster_centers, pos_inds, neg_inds):
-#
-#     n_nodes = emb.shape[0]
-#
-#     # 如果选择计算得到的相似性矩阵作为基础，（把所有的pos都看作1，然后把处于不同聚簇的边一定要断开，就是先用pos和neg构成一个简单的相似度矩阵）
-#     # 得到对应的xind, yind
-#     # sampled_neg = torch.LongTensor(np.random.choice(neg_inds, size=len(pos_inds)))
-#     # sampled_neg = torch.LongTensor(neg_inds)
-#     # sampled_inds = torch.cat((torch.LongTensor(pos_inds), sampled_neg), 0)
-#     # xind_pos = torch.LongTensor(pos_inds) // n_nodes
-#     # yind_pos = torch.LongTensor(pos_inds) % n_nodes
-#     # xind_neg = torch.LongTensor(neg_inds) // n_nodes
-#     # yind_neg = torch.LongTensor(neg_inds) % n_nodes
-#     #
-#     sim_matrix = adj.tolil()   # 基于邻接矩阵进行修改
-#     # for i in range(len(pos_inds)):   # 邻接矩阵对应位置为1
-#     #     sim_matrix[xind_pos[i], yind_pos[i]] = 1
-#     # for i in range(len(neg_inds)):   # 邻接矩阵对应位置为0
-#     #     sim_matrix[xind_neg[i], yind_neg[i]] = 0
-#     # # 上面这部分，对于都有节点相似来说，保持原来节点之间的关系
-#
-#     # 下面这部分只是给可信集合的点，同一簇的节点连接起来（更紧密）
-#     # return unconf_indices每一个节点中距离最近的unconf_indices索引  【把聚类中心换成距离最近的节点】
-#     # unconf_indices 表示所有置信的节点集合
-#
-#     # if args.labels_cor == 1:
-#     #     y_pred = pseudo_labels_z.cpu().numpy()  # all nodes pred labels
-#     #     emb_unconf = emb[unconf_indices]
-#     #     idx = unconf_indices[generate_centers(cluster_centers, emb_unconf, y_pred[unconf_indices])]
-#     #     count_int = 0
-#     #     count_out = 0
-#     #     for i, k in enumerate(unconf_indices):  # 可信集合的每一个节点，，，# idx[i]表示距离最近的一个可信节点
-#     #         indices_k = sim_matrix[k].tocsr().indices
-#     #         if (not np.isin(idx[i], indices_k)) and (y_pred[k] == y_pred[idx[i]]):
-#     #             sim_matrix[k, idx[i]] = 1
-#     #             count_int = count_int + 1
-#     #         for j in indices_k:
-#     #             if np.isin(j, unconf_indices) and (y_pred[k] != y_pred[j]):
-#     #                 sim_matrix[k, j] = 0
-#     #                 count_out = count_out + 1
-#     #
-#     #     print("-----------count---------------")
-#     #     print("count_int:", count_int)
-#     #     print("count_out:", count_out)
-#
-#     sim_matrix = sim_matrix.tocsr()
-#     # sim_matrix = adj.tocsr()
-#     sim_label = sim_matrix + sp.eye(sim_matrix.shape[0])
-#     sim_label = sparse_to_tuple(sim_label)
-#     sim_label = torch.sparse.FloatTensor(torch.LongTensor(sim_label[0].T), torch.FloatTensor(sim_label[1]),
-#                                          torch.Size(sim_label[2]))
-#
-#     return sim_label
-#
 
 # pred adj
 def sample_sim(fusion_emb, xind=None, yind=None):
 
     def scale(z):
-        zmax = z.max(dim=1, keepdim=True)[0]  # z的每一行的最大值
-        zmin = z.min(dim=1, keepdim=True)[0]  # z的每一列的最小值
-        z_std = (z - zmin) / (zmax - zmin)  # 将每一行的元素限制在0-1之间
+        zmax = z.max(dim=1, keepdim=True)[0]
+        zmin = z.min(dim=1, keepdim=True)[0]
+        z_std = (z - zmin) / (zmax - zmin)
         z_scaled = z_std
         return z_scaled
-    fusion_scaled = scale(fusion_emb)  # 每一行限制在（0-1）之间
-    fusion_norm = F.normalize(fusion_scaled)  # 每一行之和为1
+    fusion_scaled = scale(fusion_emb)
+    fusion_norm = F.normalize(fusion_scaled)
     sim_adj = torch.mm(fusion_norm, fusion_norm.t())
 
     return sim_adj
@@ -261,7 +185,7 @@ def generate_pseudo_labels_percentile(mu_z, cluster_center_z, data, cluster_num,
     selected_idx_z = cluster_pred_score >= tau_p
     selected_idx_z = [x for x, y in list(enumerate(selected_idx_z.tolist())) if y == True]
     selected_idx_z = np.asarray(selected_idx_z, dtype=int)
-    print("The number of pseudo labels:", len(selected_idx_z))  # 1804 cons labels
+    print("The number of pseudo labels:", len(selected_idx_z))
     pesu_acc, pesu_nmi, pesu_f1 = cluster_accuracy(pred_labels_z[selected_idx_z].cpu(), data.labels[selected_idx_z],
                                                    cluster_num)
     print('Pesudo labels accuracy: {:.2f},{:.2f},{:.2f}'.format(pesu_acc * 100, pesu_nmi * 100, pesu_f1 * 100))
