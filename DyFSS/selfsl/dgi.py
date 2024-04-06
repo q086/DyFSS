@@ -151,16 +151,16 @@ class DGISample(nn.Module):
 
     def forward2(self, seq1, seq2, adj, sparse, msk, samp_bias1, samp_bias2, embedding=None):
         idx = np.random.default_rng(self.args.seed).choice(self.num_nodes,
-                self.sample_size, replace=False)   # 由于图比较大，这时候需要采样，来选取正、负 样本
+                self.sample_size, replace=False)
         # TODO: remove sparse
         if embedding is None:
-            _, _, _, _, h_1 = self.encoder(seq1, adj)[idx]   # gcn encoder 的特征输出
+            _, _, _, _, h_1 = self.encoder(seq1, adj)[idx]
         else:
             h_1 = embedding[idx]
         c = self.read(h_1, msk)
         c = self.sigm(c)
 
-        _, _, _, _, h_2 = self.encoder(seq2, adj)      # 这个seq2是shuffle后的，重新过一遍gcn层
+        _, _, _, _, h_2 = self.encoder(seq2, adj)
         h_2 = self.gcn2_forward(h_2, adj)[idx]
 
         ret = self.disc2(c, h_1, h_2, samp_bias1, samp_bias2)
@@ -172,9 +172,9 @@ class DGISample(nn.Module):
         nb_nodes = features.shape[0]
 
         self.train()
-        idx = np.random.permutation(nb_nodes)  # 随机排列一些序列
+        idx = np.random.permutation(nb_nodes)
 
-        shuf_fts = features[idx, :]  # 特征的shuffle
+        shuf_fts = features[idx, :]
 
         logits = self.forward1(features, shuf_fts, adj, None, None, None, None, embedding=x)
         loss = self.b_xent(logits, self.pseudo_labels)
@@ -185,15 +185,15 @@ class DGISample(nn.Module):
         idx = np.random.default_rng(self.args.seed).choice(self.num_nodes,
                             self.sample_size, replace=False)
         if embedding is None:
-            h_1, _, _, _, _ = self.encoder(seq1, adj)   # gcn encoder 的特征输出
+            h_1, _, _, _, _ = self.encoder(seq1, adj)
             h_1 = h_1[idx]
         else:
             h_1 = embedding[idx]
-        c = self.read(h_1, msk)   # AvgReadout, 对每个节点来说
-        c = self.sigm(c)     # sigmoid 函数， 每一个node 的概率,,,, 需要验证！！！！ size 是num_nodes 还是 512 ！！
+        c = self.read(h_1, msk)
+        c = self.sigm(c)
         h_2, _, _, _, _ = self.encoder(seq2, adj)
         h_2 = h_2[idx]
-        ret = self.disc1(c, h_1, h_2, samp_bias1, samp_bias2)  # Discriminator, 返回的是 tensor([**,]) len(node_num*2)
+        ret = self.disc1(c, h_1, h_2, samp_bias1, samp_bias2)
         return ret
 
 
